@@ -1,0 +1,344 @@
+# How to Run WiFi Monitor on Your Devices
+
+## Prerequisites - Install Python Dependencies
+
+**On all devices, first install required packages:**
+
+### Windows:
+```cmd
+pip install psutil requests
+```
+
+### macOS:
+```bash
+pip3 install psutil requests
+```
+
+### Linux/Ubuntu:
+```bash
+pip3 install psutil requests
+sudo apt-get install wireless-tools
+```
+
+### Android (using Termux):
+```bash
+pkg install python
+pip install psutil requests
+```
+
+---
+
+## Step-by-Step Setup for Each Device Type
+
+### 1. Windows Laptop/Desktop
+
+#### Initial Setup:
+1. **Download the script:**
+   - Save `wifi_monitor.py` to a folder like `C:\WiFiMonitor\`
+   - Save `wifi_monitor_config.json` to the same folder
+
+2. **Configure the script:**
+   - Edit `wifi_monitor_config.json`:
+   ```json
+   {
+       "api_endpoint": "http://192.168.1.100:5000/api/usage",
+       "upload_interval": 300,
+       "api_key": "your_secure_api_key_here",
+       "target_wifi_ssid": "YourWiFiName"
+   }
+   ```
+
+3. **Test run:**
+   ```cmd
+   cd C:\WiFiMonitor
+   python wifi_monitor.py
+   ```
+
+#### Run 24/7 (Choose one method):
+
+**Method A: Windows Startup (Simple)**
+1. Create a batch file `start_monitor.bat`:
+   ```batch
+   @echo off
+   cd /d "C:\WiFiMonitor"
+   python wifi_monitor.py
+   ```
+
+2. Press `Win + R`, type `shell:startup`, press Enter
+3. Copy `start_monitor.bat` to the startup folder
+4. Restart your computer to test
+
+**Method B: Windows Task Scheduler (Advanced)**
+1. Open Task Scheduler (`Win + R` → `taskschd.msc`)
+2. Click "Create Basic Task"
+3. Name: "WiFi Monitor"
+4. Trigger: "When the computer starts"
+5. Action: "Start a program"
+6. Program: `python`
+7. Arguments: `C:\WiFiMonitor\wifi_monitor.py`
+8. Start in: `C:\WiFiMonitor`
+
+---
+
+### 2. macOS (MacBook/iMac)
+
+#### Initial Setup:
+1. **Download and place files:**
+   ```bash
+   mkdir ~/WiFiMonitor
+   # Place wifi_monitor.py and config file here
+   ```
+
+2. **Test run:**
+   ```bash
+   cd ~/WiFiMonitor
+   python3 wifi_monitor.py
+   ```
+
+#### Run 24/7 using LaunchAgent:
+
+1. **Create LaunchAgent file:**
+   ```bash
+   nano ~/Library/LaunchAgents/com.wifimonitor.plist
+   ```
+
+2. **Add this content:**
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+   <plist version="1.0">
+   <dict>
+       <key>Label</key>
+       <string>com.wifimonitor</string>
+       <key>ProgramArguments</key>
+       <array>
+           <string>/usr/bin/python3</string>
+           <string>/Users/YOURUSERNAME/WiFiMonitor/wifi_monitor.py</string>
+       </array>
+       <key>WorkingDirectory</key>
+       <string>/Users/YOURUSERNAME/WiFiMonitor</string>
+       <key>RunAtLoad</key>
+       <true/>
+       <key>KeepAlive</key>
+       <true/>
+       <key>StandardOutPath</key>
+       <string>/Users/YOURUSERNAME/WiFiMonitor/monitor.log</string>
+   </dict>
+   </plist>
+   ```
+
+3. **Load and start:**
+   ```bash
+   launchctl load ~/Library/LaunchAgents/com.wifimonitor.plist
+   launchctl start com.wifimonitor
+   ```
+
+4. **Check if running:**
+   ```bash
+   launchctl list | grep wifimonitor
+   ```
+
+---
+
+### 3. Linux (Ubuntu/Debian)
+
+#### Initial Setup:
+```bash
+mkdir ~/wifi-monitor
+cd ~/wifi-monitor
+# Place your files here
+chmod +x wifi_monitor.py
+python3 wifi_monitor.py  # Test run
+```
+
+#### Run 24/7 using Systemd:
+
+1. **Create service file:**
+   ```bash
+   sudo nano /etc/systemd/system/wifi-monitor.service
+   ```
+
+2. **Add service configuration:**
+   ```ini
+   [Unit]
+   Description=WiFi Usage Monitor
+   After=network.target
+   Wants=network.target
+
+   [Service]
+   Type=simple
+   User=yourusername
+   Group=yourusername
+   WorkingDirectory=/home/yourusername/wifi-monitor
+   ExecStart=/usr/bin/python3 /home/yourusername/wifi-monitor/wifi_monitor.py
+   Restart=always
+   RestartSec=10
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+3. **Enable and start:**
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable wifi-monitor.service
+   sudo systemctl start wifi-monitor.service
+   ```
+
+4. **Check status:**
+   ```bash
+   sudo systemctl status wifi-monitor.service
+   sudo journalctl -u wifi-monitor.service -f  # View logs
+   ```
+
+---
+
+### 4. Android Devices (Using Termux)
+
+#### Setup Termux:
+1. **Install Termux** from F-Droid or Google Play
+2. **Setup Python:**
+   ```bash
+   pkg update
+   pkg install python
+   pip install psutil requests
+   ```
+
+3. **Create monitor directory:**
+   ```bash
+   mkdir ~/wifi-monitor
+   cd ~/wifi-monitor
+   # Transfer wifi_monitor.py and config files here
+   ```
+
+4. **Test run:**
+   ```bash
+   python wifi_monitor.py
+   ```
+
+#### Run in Background:
+1. **Install Termux:Boot** (from F-Droid)
+2. **Create startup script:**
+   ```bash
+   mkdir -p ~/.termux/boot
+   nano ~/.termux/boot/wifi-monitor
+   ```
+
+3. **Add to startup script:**
+   ```bash
+   #!/data/data/com.termux/files/usr/bin/bash
+   cd ~/wifi-monitor
+   python wifi_monitor.py > monitor.log 2>&1 &
+   ```
+
+4. **Make executable:**
+   ```bash
+   chmod +x ~/.termux/boot/wifi-monitor
+   ```
+
+---
+
+## Manual Running (For Testing)
+
+### Interactive Mode:
+```bash
+python3 wifi_monitor.py
+```
+
+**Available commands while running:**
+- `stats` - Show local usage statistics
+- `upload` - Force upload data to server
+- `quit` or `exit` - Stop the monitor
+
+### Background Mode (Quick Start):
+```bash
+# Linux/macOS
+nohup python3 wifi_monitor.py > monitor.log 2>&1 &
+
+# Windows (PowerShell)
+Start-Process python -ArgumentList "wifi_monitor.py" -WindowStyle Hidden
+```
+
+---
+
+## Verification Steps
+
+### 1. Check if Monitor is Running:
+
+**Windows:**
+```cmd
+tasklist | findstr python
+```
+
+**macOS/Linux:**
+```bash
+ps aux | grep wifi_monitor
+```
+
+### 2. Check Local Database:
+The script creates `local_usage.db` - if this file exists and grows, it's working.
+
+### 3. Check Server Connection:
+```bash
+# Test server endpoint
+curl http://YOUR_SERVER_IP:5000/api/health
+```
+
+### 4. View Logs:
+- Windows: Check console output or redirect to file
+- macOS: `tail -f ~/WiFiMonitor/monitor.log`
+- Linux: `sudo journalctl -u wifi-monitor.service -f`
+- Android: `tail -f ~/wifi-monitor/monitor.log`
+
+---
+
+## Troubleshooting Common Issues
+
+### Permission Issues:
+```bash
+# Linux - if network tools need sudo
+sudo setcap cap_net_raw,cap_net_admin+eip $(which python3)
+```
+
+### WiFi Detection Problems:
+- Ensure WiFi SSID in config matches exactly (case-sensitive)
+- On Linux, user might need to be in `netdev` group
+- Try running once with `sudo` to test
+
+### Network Upload Issues:
+- Check firewall settings
+- Verify server IP and port
+- Test API key authentication
+
+### Auto-start Not Working:
+- Check file paths in service configurations
+- Verify Python path: `which python3`
+- Check service logs for errors
+
+---
+
+## Quick Command Reference
+
+```bash
+# Start monitor
+python3 wifi_monitor.py
+
+# Check if running (Linux/macOS)
+ps aux | grep wifi_monitor
+
+# Stop monitor (if running in background)
+pkill -f wifi_monitor.py
+
+# Check local stats
+python3 -c "
+import sqlite3
+conn = sqlite3.connect('local_usage.db')
+cursor = conn.cursor()
+cursor.execute('SELECT COUNT(*) FROM usage_data')
+print(f'Records: {cursor.fetchone()[0]}')
+conn.close()
+"
+```
+
+This should get the WiFi monitor running on all your devices! Each person needs to follow these steps for their own devices.
