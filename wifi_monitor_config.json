@@ -2,7 +2,7 @@
     "api_endpoint": "http://192.168.1.100:5000/api/usage",
     "upload_interval": 300,
     "api_key": "change_this_to_secure_key_12345",
-    "target_wifi_ssid": "YourBoardingHouseWiFi",
+    "target_wifi_ssid": "YourBoardingHouseWiFi", 
     "device_settings": {
         "monitoring_interval": 60,
         "cleanup_days": 30,
