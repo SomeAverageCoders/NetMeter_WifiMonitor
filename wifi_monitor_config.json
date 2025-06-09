@@ -7,10 +7,18 @@
         "monitoring_interval": 60,
         "cleanup_days": 30,
         "retry_attempts": 3,
-        "timeout_seconds": 30
+        "timeout_seconds": 30,
+        "track_download": true,
+        "track_upload": true,
+        "decimal_precision": 2
     },
     "logging": {
         "enable_console_output": true,
-        "log_level": "INFO"
+        "log_level": "INFO",
+        "log_quota_checks": true
+    },
+    "database": {
+        "track_groups": true,
+        "track_daily_limits": true
     }
 }
