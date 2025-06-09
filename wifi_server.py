@@ -25,29 +25,72 @@ def init_database():
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
-    # Usage data table
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS usage_records (
+        CREATE TABLE IF NOT EXISTS device (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            device_id TEXT NOT NULL,
-            wifi_ssid TEXT NOT NULL,
-            timestamp TEXT NOT NULL,
-            bytes_sent INTEGER DEFAULT 0,
-            bytes_received INTEGER DEFAULT 0,
-            total_bytes INTEGER DEFAULT 0,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            name TEXT,
+            mac_address TEXT UNIQUE,
+            owner_id INTEGER
         )
     ''')
 
-    # Device registry table
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS devices (
-            device_id TEXT PRIMARY KEY,
-            device_name TEXT,
-            owner_name TEXT,
-            first_seen TEXT DEFAULT CURRENT_TIMESTAMP,
-            last_seen TEXT DEFAULT CURRENT_TIMESTAMP,
-            is_active BOOLEAN DEFAULT TRUE
+        CREATE TABLE IF NOT EXISTS device_groups (
+            device_id INTEGER,
+            group_id INTEGER,
+            PRIMARY KEY (device_id, group_id)
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS device_usage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ssid TEXT,
+            usage_date DATE,
+            download_bytes REAL,
+            upload_bytes REAL,
+            device_id INTEGER,
+            group_id INTEGER
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS group_members_user (
+            groupId INTEGER,
+            userId INTEGER,
+            PRIMARY KEY (groupId, userId)
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS "user" (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            email TEXT,
+            mobile TEXT,
+            isVerified BOOLEAN,
+            userRole TEXT,
+            password TEXT
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS "group" (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            adminId INTEGER,
+            wifiConfigId INTEGER
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS wifi_configuration (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            networkName TEXT,
+            ssid TEXT,
+            status BOOLEAN,
+            dataQuota REAL,
+            dailyUsageLimitPerMember REAL
         )
     ''')
 

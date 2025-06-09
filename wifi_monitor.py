@@ -96,11 +96,11 @@ class DatabaseManager:
                         d.name as device_name, 
                         u.id as user_id,
                         u.name as user_name,
-                        array_remove(array_agg(g.id), NULL) as group_ids
+                        array_remove(array_agg(gm.groupId), NULL) as group_ids
                     FROM device d
                     JOIN "user" u ON d.owner_id = u.id
                     LEFT JOIN device_groups dg ON d.id = dg.device_id
-                    LEFT JOIN "group" g ON dg.group_id = g.id
+                    LEFT JOIN group_members_user gm ON dg.group_id = gm.groupId
                     WHERE d.mac_address = %s
                     GROUP BY d.id, u.id
                 """)
@@ -114,7 +114,7 @@ class DatabaseManager:
             return None
             
     def get_wifi_config(self, ssid, group_id):
-        """Get WiFi configuration for SSID and group - Updated structure"""
+        """Get WiFi configuration for SSID and group"""
         if not self.conn:
             return None
             
@@ -123,7 +123,7 @@ class DatabaseManager:
                 query = sql.SQL("""
                     SELECT wc.* 
                     FROM wifi_configuration wc
-                    JOIN "group" g ON wc.id = g.wifi_config_id
+                    JOIN "group" g ON wc.id = g.wifiConfigId
                     WHERE wc.ssid = %s AND g.id = %s
                 """)
                 cur.execute(query, (ssid, group_id))
@@ -139,11 +139,9 @@ class DatabaseManager:
             
         try:
             with self.conn.cursor() as cur:
-                # Convert bytes to numeric(20,2) format expected by database
                 download_decimal = Decimal(download_bytes).quantize(Decimal('0.00'))
                 upload_decimal = Decimal(upload_bytes).quantize(Decimal('0.00'))
                 
-                # Check for existing record
                 check_query = sql.SQL("""
                     SELECT id FROM device_usage 
                     WHERE device_id = %s AND group_id = %s 
@@ -156,16 +154,15 @@ class DatabaseManager:
                     update_query = sql.SQL("""
                         UPDATE device_usage 
                         SET download_bytes = download_bytes + %s,
-                            upload_bytes = upload_bytes + %s,
-                            updated_at = NOW()
+                            upload_bytes = upload_bytes + %s
                         WHERE id = %s
                     """)
                     cur.execute(update_query, (download_decimal, upload_decimal, existing[0]))
                 else:
                     insert_query = sql.SQL("""
                         INSERT INTO device_usage 
-                        (device_id, group_id, usage_date, ssid, download_bytes, upload_bytes, created_at, updated_at)
-                        VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())
+                        (device_id, group_id, usage_date, ssid, download_bytes, upload_bytes)
+                        VALUES (%s, %s, %s, %s, %s, %s)
                     """)
                     cur.execute(insert_query, 
                             (device_id, group_id, date, ssid, download_decimal, upload_decimal))
@@ -187,15 +184,15 @@ class DatabaseManager:
             with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
                 query = sql.SQL("""
                     SELECT 
-                        wc.daily_usage_limit as dailyUsageLimitPerMember,
+                        wc.dailyUsageLimitPerMember,
                         COALESCE(SUM(du.download_bytes + du.upload_bytes), 0) as total_usage
                     FROM wifi_configuration wc
-                    JOIN "group" g ON wc.id = g.wifi_config_id
+                    JOIN "group" g ON wc.id = g.wifiConfigId
                     LEFT JOIN device_usage du ON du.group_id = g.id 
                                             AND du.usage_date = %s
                                             AND du.ssid = %s
                     WHERE g.id = %s AND wc.ssid = %s
-                    GROUP BY wc.daily_usage_limit
+                    GROUP BY wc.dailyUsageLimitPerMember
                 """)
                 cur.execute(query, (date, ssid, group_id, ssid))
                 result = cur.fetchone()
